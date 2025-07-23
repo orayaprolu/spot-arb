@@ -30,6 +30,15 @@ CREATE TABLE IF NOT EXISTS trades (
   price REAL NOT NULL,
   amount REAL NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS orderbook (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts TEXT NOT NULL,
+  exchange TEXT NOT NULL,
+  market TEXT NOT NULL,
+  bids TEXT NOT NULL,
+  asks TEXT NOT NULL
+);
 """)
 conn.commit()
 
@@ -57,6 +66,24 @@ async def consume_trades(queue, exchange):
     )
     conn.commit()
 
+import json
+
+async def consume_orderbook(queue, exchange):
+  while True:
+    ob = await queue.get()
+
+    bids_json = json.dumps(ob.bids)  # List of (price, size)
+    asks_json = json.dumps(ob.asks)
+
+    cursor.execute(
+      """
+      INSERT INTO orderbook (ts, exchange, market, bids, asks)
+      VALUES (?, ?, ?, ?, ?)
+      """,
+      (ob.ts.isoformat(), exchange, ob.market, bids_json, asks_json)
+    )
+    conn.commit()
+
 
 # Launch for one pair
 async def run_pair(pair: str):
@@ -64,7 +91,8 @@ async def run_pair(pair: str):
   task1 = asyncio.create_task(feed.run())
   task2 = asyncio.create_task(consume_bba(feed.bba_queue, exchange=feed.exchange))
   task3 = asyncio.create_task(consume_trades(feed.trade_queue, exchange=feed.exchange))
-  return [task1, task2, task3]
+  task4 = asyncio.create_task(consume_orderbook(feed.orderbook_queue, exchange=feed.exchange))
+  return [task1, task2, task3, task4]
 
 # Entry point: run all pairs forever
 async def main():
