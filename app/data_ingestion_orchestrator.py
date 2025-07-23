@@ -7,6 +7,7 @@ from libraries.data_ingestion.coinex_data_feed import CoinexDataFeed
 DB_DIR = "output"
 DB_PATH = os.path.join(DB_DIR, "arb_data.db")
 conn = sqlite3.connect(DB_PATH)
+conn.execute("PRAGMA journal_mode=WAL;")
 cursor = conn.cursor()
 
 cursor.executescript("""

@@ -5,6 +5,14 @@ import requests
 import json
 from urllib.parse import urlencode
 
+from libraries.models.coinex_place_order_response import CoinexPlaceOrderResponse
+from libraries.models.coinex_order_data import CoinexOrderData
+from libraries.models.coinex_place_order_request import CoinexPlaceOrderRequest
+from libraries.models.coinex_cancel_all_orders_request import CoinexCancelAllOrdersRequest
+from libraries.models.coinex_empty_response import CoinexEmptyResponse
+from libraries.models.coinex_cancel_order_request import CoinexCancelOrderRequest
+from libraries.models.coinex_cancel_order_response import CoinexCancelOrderResponse
+
 COINEX_HTTP = 'https://api.coinex.com'
 
 
@@ -65,69 +73,54 @@ class CoinexExchangeClient:
     '''Get account information'''
     return self._request("GET", "/v2/account/info")
 
-  def place_order(
-    self,
-    pair: str,
-    side: str,
-    amount: float,
-    price: float,
-    ccy: str | None = None,
-    client_id: str | None = None,
-    is_hide: bool = False,
-    stp_mode: str | None = None,
-  ) -> dict:
-    """
-    Place a spot order.
-
-    Required:
-      pair      – e.g. "BTC-USDT"
-      side        – "buy" or "sell"
-      order_type  – "limit" or "market"
-      amount      – order quantity as string
-      price       – limit price (required for limit orders)
-
-    Optional:
-      ccy         – for market orders, which currency ("BTC" or "USDT")
-      client_id   – your own client‐side ID
-      is_hide     – hide in public depth (True/False)
-      stp_mode    – self‐trade protection: "ct", "cm", or "both"
-    """
-    market = pair.replace('-', '')
-    body: dict = {
-      "market":      market,
-      "market_type": "SPOT",
-      "side":        side,
-      "type":        "limit",
-      "amount":      str(amount),
-      "price":       str(price)
-    }
-
-    if price is not None:
-      body["price"] = price
-    if ccy is not None:
-      body["ccy"] = ccy
-    if client_id is not None:
-      body["client_id"] = client_id
-    if is_hide:
-      body["is_hide"] = True
-    if stp_mode is not None:
-      body["stp_mode"] = stp_mode
-
-    # POST to /v2/spot/order
-    return self._request("POST", "/v2/spot/order", body=body)
-
-  def cancel_all_orders(self, pair: str):
-    '''Cancels all orders of a specfic pair'''
+  def place_order(self, req: CoinexPlaceOrderRequest) -> CoinexPlaceOrderResponse:
     body = {
-      "market": pair.replace("-", ""),
-      "market_type": "SPOT"
+      "market": req.market.replace("-", ""),
+      "market_type": req.market_type,
+      "side": req.side,
+      "type": req.type,
+      "amount": req.amount,
+      "price": req.price,
     }
-    return self._request("POST", "/v2/spot/cancel-all-order", body=body)
 
-  def cancel_order(self, pair: str, order_id: str):
+    # Optional fields
+    if req.ccy is not None:
+      body["ccy"] = req.ccy
+    if req.client_id is not None:
+      body["client_id"] = req.client_id
+    if req.is_hide:
+      body["is_hide"] = True  # type: ignore
+    if req.stp_mode is not None:
+      body["stp_mode"] = req.stp_mode
+
+    resp_dict = self._request("POSTa", "/v2/spot/order", body=body)
+    return CoinexPlaceOrderResponse(
+      code=resp_dict["code"],
+      data=CoinexOrderData(**resp_dict["data"]),
+      message=resp_dict["message"]
+    )
+
+  def cancel_all_orders(self, req: CoinexCancelAllOrdersRequest) -> CoinexEmptyResponse:
     body = {
-      "market": pair.replace("-", ""),
-      "market_type": "SPOT",
-      "order_id": int(order_id)
+      "market": req.market.replace("-", ""),
+      "market_type": req.market_type,
     }
-    return self._request("POST", "/v2/spot/cancel-order", body=body)
+    if req.side:
+      body["side"] = req.side
+
+    resp = self._request("POST", "/v2/spot/cancel-all-order", body=body)
+    return CoinexEmptyResponse(**resp)
+
+  def cancel_order(self, req: CoinexCancelOrderRequest) -> CoinexCancelOrderResponse:
+    body = {
+      "market": req.market.replace("-", ""),
+      "market_type": req.market_type,
+      "order_id": req.order_id
+    }
+
+    resp = self._request("POST", "/v2/spot/cancel-order", body=body)
+    return CoinexCancelOrderResponse(
+      code=resp["code"],
+      message=resp["message"],
+      data=CoinexOrderData(**resp["data"])
+    )

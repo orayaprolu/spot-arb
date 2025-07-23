@@ -199,7 +199,6 @@ class CoinexDataFeed(BaseDataFeed):
       asks=asks,
     )
 
-    print(orderbook)
     await self.orderbook_queue.put(orderbook)
 
   @override
