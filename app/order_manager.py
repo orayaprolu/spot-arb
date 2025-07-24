@@ -1,6 +1,7 @@
 import asyncio
 import os
 from dotenv import load_dotenv
+import argparse
 
 from libraries.data_ingestion.coinex_data_feed import CoinexDataFeed
 from libraries.data_ingestion.mexc_data_feed import MexcDataFeed
@@ -9,7 +10,7 @@ from libraries.exchange_clients.coinex_exchange_client import CoinexExchangeClie
 
 load_dotenv()
 
-async def main(pair: str):
+async def main(pair: str, amount_usd: float):
   # instantiate feeds
   coinex_feed = CoinexDataFeed(pair)
   mexc_feed  = MexcDataFeed(pair)
@@ -28,11 +29,17 @@ async def main(pair: str):
 
   # schedule your manager
   order_manager = ChaseBBA(pair, coinex_feed, mexc_feed, coinex_exchange_client)
-  task3 = asyncio.create_task(order_manager.run(500))
+  task3 = asyncio.create_task(order_manager.run(amount_usd))
 
   # wait forever (or until one task ends)
   await asyncio.gather(task1, task2, task3)
 
 
 if __name__ == "__main__":
-  asyncio.run(main("PENDLE-USDT"))
+  parser = argparse.ArgumentParser(description="Run spot arb order manager.")
+  parser.add_argument("pair", type=str, help="Trading pair, e.g. PENDLE-USDT")
+  parser.add_argument("amount_usd", type=float, help="Order amount in USD")
+
+  args = parser.parse_args()
+
+  asyncio.run(main(args.pair, args.amount_usd))
