@@ -5,7 +5,7 @@ import pandas as pd
 
 # --- Config ---
 DB_PATH = "output/arb_data.db"
-PAIR = "PENDLEUSDT"
+PAIR = "XECUSDT"
 
 conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()

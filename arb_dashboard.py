@@ -1,7 +1,6 @@
 import streamlit as st
 import asyncio
 import threading
-import time
 from streamlit_autorefresh import st_autorefresh
 import pandas as pd
 import requests
@@ -11,7 +10,9 @@ from libraries.data_ingestion.mexc_data_feed import MexcDataFeed
 from libraries.models.bba import BBA
 
 # --- Configuration ---
-DEFAULT_PAIRS = 100
+DEFAULT_PAIRS = 300
+LOWER_LIMIT = 75
+UPPER_LIMIT = 150
 REFRESH_MS = 1000  # Autorefresh interval in milliseconds
 
 # Fetch top USDT pairs by volume
@@ -23,7 +24,7 @@ def fetch_assets_coinex(num_assets: int = DEFAULT_PAIRS) -> list[str]:
     tickers = resp.json().get("data", [])
     usdt = [t for t in tickers if t["market"].endswith("USDT")]
     usdt.sort(key=lambda t: float(t["value"]), reverse=True)
-    return [f"{t['market'][:-4]}-USDT" for t in usdt[:num_assets]]
+    return [f"{t['market'][:-4]}-USDT" for t in usdt[:num_assets]][LOWER_LIMIT:UPPER_LIMIT]
 
 # Singleton state and background initialization
 @st.cache_resource
@@ -98,6 +99,7 @@ def build_dataframe(state: dict[str, dict[str, float]]) -> pd.DataFrame:
                 "Taker (bps)": None,
             })
     df = pd.DataFrame(records)
+    return df
     return df.sort_values(by="Arb (bps)", ascending=False)
 
 # Streamlit app

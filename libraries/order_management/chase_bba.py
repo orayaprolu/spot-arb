@@ -11,8 +11,17 @@ from libraries.models.coinex_cancel_all_orders_request import CoinexCancelAllOrd
 from utils.difference_in_bps import difference_in_bps
 
 class ChaseBBA():
-  def __init__(self, pair: str, coinex_feed: CoinexDataFeed, mexc_feed: MexcDataFeed, coinex_exchange_client: CoinexExchangeClient):
+  def __init__(
+    self,
+    pair: str,
+    minimum_bps_threshold: float,
+    coinex_feed: CoinexDataFeed,
+    mexc_feed: MexcDataFeed,
+    coinex_exchange_client: CoinexExchangeClient,
+
+  ):
     self.pair = pair.replace('-', '')
+    self.minimum_bps_threshold = minimum_bps_threshold
 
     self.coinex_feed: CoinexDataFeed = coinex_feed
     self.mexc_feed: MexcDataFeed = mexc_feed
@@ -65,8 +74,12 @@ class ChaseBBA():
       price = str(p0),
     )
 
-    visible_order = self.coinex_exchange_client.place_order(visible_order_request)
-    self.visible_order = visible_order.data
+    try:
+      visible_order = self.coinex_exchange_client.place_order(visible_order_request)
+      self.visible_order = visible_order.data
+    except Exception as e:
+      print(f"[ERROR] Failed to place visible order: {e}")
+      self.visible_order = None
 
   def _place_hidden_order(self, p0: float, amount_pair: float):
     hidden_order_request = CoinexPlaceOrderRequest(
@@ -77,8 +90,12 @@ class ChaseBBA():
       is_hide = True
     )
 
-    hidden_order = self.coinex_exchange_client.place_order(hidden_order_request)
-    self.hidden_order = hidden_order.data
+    try:
+      hidden_order = self.coinex_exchange_client.place_order(hidden_order_request)
+      self.hidden_order = hidden_order.data
+    except Exception as e:
+      print(f"[ERROR] Failed to place hidden order: {e}")
+      self.hidden_order = None
 
   def cancel_orders(self):
     self.coinex_exchange_client.cancel_all_orders(CoinexCancelAllOrdersRequest(market=self.pair))
@@ -103,8 +120,8 @@ class ChaseBBA():
       # If the Bps spread falls below 30, we just want to cancel and not replace order
       # TODO: Change this to a more nuaced "leave in market at 30 bps" later
       print("BPS ARB:", bps)
-      if bps < 30:
-        print("Arb less than 30 bps, canceling")
+      if bps < self.minimum_bps_threshold:
+        print(f"Arb less than {self.minimum_bps_threshold} bps, canceling")
         self.cancel_orders()
         continue
 
