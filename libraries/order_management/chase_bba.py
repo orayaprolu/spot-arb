@@ -124,7 +124,7 @@ class ChaseBBA():
         self.place_orders(limit_amount_usd)
         continue
 
-      #TODO: FIX THIS IT CURRENTLY CAN'T TELL THIS CAUSE WE NEVER QUERY THE API FOR IT
+      #TODO: FIX THIS IT CURRENTLY CAN'T TELL THIS CAUSE WE NEVER QUERY THE API FOR IT (Actually we might not need this since bba changes)
       # 2) Order is fully filled
       if self.visible_order and self.visible_order.unfilled_amount == 0:
         print("Visible order fully filled, replacing it")

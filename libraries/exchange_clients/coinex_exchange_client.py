@@ -94,9 +94,19 @@ class CoinexExchangeClient:
       body["stp_mode"] = req.stp_mode
 
     resp_dict = self._request("POST", "/v2/spot/order", body=body)
+
+    data = None
+    if "data" in resp_dict and isinstance(resp_dict["data"], dict) and resp_dict["data"]:
+      try:
+        data = CoinexOrderData(**resp_dict["data"])
+      except TypeError as e:
+        print(f"[ERROR] Failed to parse CoinexOrderData: {e}")
+        print(f"[DEBUG] resp_dict['data']: {resp_dict['data']}")
+        raise
+
     return CoinexPlaceOrderResponse(
       code=resp_dict["code"],
-      data=CoinexOrderData(**resp_dict["data"]),
+      data=data,
       message=resp_dict["message"]
     )
 

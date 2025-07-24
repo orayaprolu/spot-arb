@@ -4,5 +4,5 @@ from libraries.models.coinex_order_data import CoinexOrderData
 @dataclass
 class CoinexPlaceOrderResponse:
     code: int
-    data: CoinexOrderData
+    data: CoinexOrderData | None
     message: str
