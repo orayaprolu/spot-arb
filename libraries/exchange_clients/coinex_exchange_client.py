@@ -93,7 +93,7 @@ class CoinexExchangeClient:
     if req.stp_mode is not None:
       body["stp_mode"] = req.stp_mode
 
-    resp_dict = self._request("POSTa", "/v2/spot/order", body=body)
+    resp_dict = self._request("POST", "/v2/spot/order", body=body)
     return CoinexPlaceOrderResponse(
       code=resp_dict["code"],
       data=CoinexOrderData(**resp_dict["data"]),

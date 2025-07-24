@@ -1,7 +1,6 @@
 import asyncio
 import argparse
 
-
 from libraries.data_ingestion.coinex_data_feed import CoinexDataFeed
 
 async def consume_bba(queue):

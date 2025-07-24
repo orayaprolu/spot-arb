@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import websockets
 import json
 import asyncio
@@ -17,7 +17,7 @@ class MexcDataFeed(BaseDataFeed):
     self.ws_url = MEXC_WS
     self.pair = pair.replace('-', '')
     self.ws = None
-    self.bba = None
+    self.bba: BBA | None = None
 
   async def _subscribe_depth(self) -> bool:
     channel = f"{PARTIAL_DEPTH_WS_ENDPOINT}@{self.pair}"
@@ -40,7 +40,11 @@ class MexcDataFeed(BaseDataFeed):
         return False
 
       ping_msg = {"method": "PING"}
-      await self.ws.send(json.dumps(ping_msg))
+      try:
+        await self.ws.send(json.dumps(ping_msg))
+      except websockets.ConnectionClosed as e:
+        # this will tell you what the server sent (or None/None if it was unclean)
+        print(f"[INFO] WebSocket closed — code: {e.code!r}, reason: {e.reason!r}")
       return True
 
     while True:
@@ -71,7 +75,14 @@ class MexcDataFeed(BaseDataFeed):
         pb = msg.publicAggreBookTicker
         bid = float(pb.bidPrice)
         ask = float(pb.askPrice)
-        self.bba = BBA(self.pair, bid, ask, datetime.now())
+        self.bba = BBA(
+            ts = datetime.now(timezone.utc),
+            market = self.pair,
+            best_bid_price=bid,
+            best_bid_size=0,
+            best_ask_price=ask,
+            best_ask_size=0
+        )
 
   async def run(self):
     """Starts up all processes to run data feed"""

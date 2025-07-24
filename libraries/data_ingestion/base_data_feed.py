@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
 from websockets.asyncio.client import ClientConnection
+import asyncio
 
 from libraries.models.bba import BBA
 from libraries.models.trade import Trade
@@ -10,8 +11,8 @@ class BaseDataFeed(ABC):
   pair: str
   ws_url: str
   ws: Optional[ClientConnection]
-  bba: Optional[BBA]
-  trades: Optional[List[Trade]]
+  bba_queue: asyncio.Queue[BBA]
+  trade_queue: asyncio.Queue[Trade]
 
   @abstractmethod
   async def run(self):
@@ -22,10 +23,3 @@ class BaseDataFeed(ABC):
   async def _ping(self):
     """Creates loop that sends ping to WebSocket. Return True if response sent back."""
     pass
-
-  def get_best_bid(self):
-    if not self.bba:
-      print(f"[{self.exchange} {self.pair} ERROR] No BBA to return")
-      return
-
-    return self.bba.bid
