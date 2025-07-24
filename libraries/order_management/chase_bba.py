@@ -106,6 +106,7 @@ class ChaseBBA():
       if bps < 30:
         print("Arb less than 30 bps, canceling")
         self.cancel_orders()
+        continue
 
       if not self.visible_order and not self.hidden_order:
         print("Currently no orders, creating one now")
