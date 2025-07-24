@@ -119,10 +119,16 @@ class CoinexDataFeed(BaseDataFeed):
       print("[ERROR] No CoinEx Websocket connection found")
       return
 
-    param = {"method": "server.ping", "params": {}, "id": 1}
+    json_id = 1000
     while True:
-      await self.ws.send(json.dumps(param))
-      await asyncio.sleep(3)
+      await self.ws.ping()
+
+      # 2) CoinEx JSON ping (optional)
+      payload = {"method":"server.ping", "params":{}, "id": json_id}
+      await self.ws.send(json.dumps(payload))
+      json_id += 1   # avoid re-using the same ID
+
+      await asyncio.sleep(20)
 
   async def _streamer(self):
     if not self.ws:

@@ -6,7 +6,7 @@ from collections import defaultdict
 
 # --- Config ---
 DB_PATH = "output/arb_data.db"
-PAIR = "PENDLEUSDT"
+PAIR = "BTTUSDT"
 FILTER_THRESHOLD = 0.95  # only count BBA trades consuming ≥95% of visible size
 
 # --- Connect ---
