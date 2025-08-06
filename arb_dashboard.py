@@ -11,7 +11,7 @@ from libraries.models.bba import BBA
 
 # --- Configuration ---
 DEFAULT_PAIRS = 300
-LOWER_LIMIT = 75
+LOWER_LIMIT = 0
 UPPER_LIMIT = 150
 REFRESH_MS = 1000  # Autorefresh interval in milliseconds
 
